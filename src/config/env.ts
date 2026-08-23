@@ -3,21 +3,28 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const defaultAppUrl = process.env.APP_URL || 'https://community.aducti.com';
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
   HOST: z.string().default('0.0.0.0'),
-  APP_URL: z.string().url().default('http://localhost:3000'),
+  APP_URL: z.string().url().default(defaultAppUrl),
 
   // Database
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DATABASE_URL: z
+    .string()
+    .default('postgres://postgres:postgres_password@localhost:5432/aducti_labs_discord'),
 
   // Discord
   DISCORD_BOT_TOKEN: z.string().min(1, 'DISCORD_BOT_TOKEN is required'),
   DISCORD_CLIENT_ID: z.string().min(1, 'DISCORD_CLIENT_ID is required'),
   DISCORD_CLIENT_SECRET: z.string().min(1, 'DISCORD_CLIENT_SECRET is required'),
   DISCORD_GUILD_ID: z.string().min(1, 'DISCORD_GUILD_ID is required'),
-  DISCORD_REDIRECT_URI: z.string().url('DISCORD_REDIRECT_URI must be a valid URL'),
+  DISCORD_REDIRECT_URI: z
+    .string()
+    .url()
+    .default(`${defaultAppUrl}/auth/discord/callback`),
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
@@ -26,7 +33,9 @@ const envSchema = z.object({
   STRIPE_PRICE_FOUNDER_ID: z.string().optional().default(''),
 
   // Security
-  SESSION_SECRET: z.string().min(16, 'SESSION_SECRET must be at least 16 characters long'),
+  SESSION_SECRET: z
+    .string()
+    .default('3577a0a049ad19acfc21ba1e54bd5c3ae36ade875596c82c6f9b5a19036d79de'),
 });
 
 export type Env = z.infer<typeof envSchema>;

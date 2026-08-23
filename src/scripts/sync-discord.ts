@@ -24,13 +24,14 @@ async function sync() {
     await MessageManager.syncProMessage(guild);
 
     logger.info(syncResult, '=== SINCRONIZACIÓN DE DISCORD COMPLETADA ===');
-  } catch (err) {
-    logger.error({ err }, 'Error durante la sincronización');
-    process.exitCode = 1;
-  } finally {
-    const client = getDiscordClient();
     client.destroy();
     await pool.end();
+    process.exit(0);
+  } catch (err) {
+    logger.error({ err }, 'Error durante la sincronización');
+    getDiscordClient().destroy();
+    await pool.end();
+    process.exit(1);
   }
 }
 

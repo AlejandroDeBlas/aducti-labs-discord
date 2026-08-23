@@ -20,13 +20,14 @@ async function reconcile() {
 
     const reconResult = await ReconcileService.reconcileGuildMembers(guild);
     logger.info(reconResult, '=== RECONCILIACIÓN COMPLETADA CON ÉXITO ===');
-  } catch (err) {
-    logger.error({ err }, 'Error durante la reconciliación');
-    process.exitCode = 1;
-  } finally {
-    const client = getDiscordClient();
     client.destroy();
     await pool.end();
+    process.exit(0);
+  } catch (err) {
+    logger.error({ err }, 'Error durante la reconciliación');
+    getDiscordClient().destroy();
+    await pool.end();
+    process.exit(1);
   }
 }
 

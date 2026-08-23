@@ -430,7 +430,6 @@ export const DECLARATIVE_SERVER_CONFIG: DeclarativeServerConfig = {
         {
           name: CHANNEL_NAMES.SALA_PRO,
           type: ChannelType.GuildVoice,
-          topic: 'Sala de voz y streaming para workshops en directo, coworking y sesiones PRO.',
           permissionOverrides: (roles, everyoneId) => [
             {
               id: everyoneId,

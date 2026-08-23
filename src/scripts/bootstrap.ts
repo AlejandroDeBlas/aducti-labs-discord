@@ -51,13 +51,14 @@ async function bootstrap() {
     logger.info(reconResult, 'Reconciliación inicial finalizada.');
 
     logger.info('=== BOOTSTRAP COMPLETADO CON ÉXITO ===');
-  } catch (err) {
-    logger.error({ err }, 'Error durante el bootstrap');
-    process.exitCode = 1;
-  } finally {
-    const client = getDiscordClient();
     client.destroy();
     await pool.end();
+    process.exit(0);
+  } catch (err) {
+    logger.error({ err }, 'Error durante el bootstrap');
+    getDiscordClient().destroy();
+    await pool.end();
+    process.exit(1);
   }
 }
 

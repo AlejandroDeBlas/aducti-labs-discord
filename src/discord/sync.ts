@@ -112,18 +112,26 @@ export class DiscordSyncEngine {
           ? chDef.permissionOverrides(rolesMap, everyoneRoleId)
           : undefined;
 
+        const isTextBased = chDef.type === ChannelType.GuildText || chDef.type === ChannelType.GuildAnnouncement || chDef.type === ChannelType.GuildForum;
+
         if (!channel) {
           logger.info({ channelName: chDef.name, category: catDef.name }, 'Creating missing channel');
-          await guild.channels.create({
+          const createOptions: any = {
             name: chDef.name,
-            type: chDef.type as any,
+            type: chDef.type,
             parent: category.id,
             position: chIndex,
-            topic: chDef.topic,
-            rateLimitPerUser: chDef.rateLimitPerUser ?? 0,
             permissionOverwrites: channelOverwrites ?? expectedOverwrites,
             reason: 'Aducti Labs Server Declarative Sync',
-          } as any);
+          };
+          if (isTextBased && chDef.topic) {
+            createOptions.topic = chDef.topic;
+          }
+          if (isTextBased && chDef.rateLimitPerUser) {
+            createOptions.rateLimitPerUser = chDef.rateLimitPerUser;
+          }
+
+          await guild.channels.create(createOptions);
           channelsCreated++;
         } else {
           // Channel exists, check parent, topic, position, and overrides
@@ -131,19 +139,25 @@ export class DiscordSyncEngine {
           const currentTopic = isText ? (channel as any).topic : undefined;
           const currentRateLimit = isText ? (channel as any).rateLimitPerUser : undefined;
 
+          const updateOptions: any = {
+            parent: category.id,
+            position: chIndex,
+            reason: 'Aducti Labs Server Declarative Sync',
+          };
+          if (isText && chDef.topic !== undefined) {
+            updateOptions.topic = chDef.topic;
+          }
+          if (isText && chDef.rateLimitPerUser !== undefined) {
+            updateOptions.rateLimitPerUser = chDef.rateLimitPerUser;
+          }
+
           if (
             channel.parentId !== category.id ||
             (channel as any).position !== chIndex ||
             (isText && (currentTopic !== (chDef.topic ?? null) || currentRateLimit !== (chDef.rateLimitPerUser ?? 0)))
           ) {
             logger.info({ channelName: chDef.name }, 'Updating channel metadata');
-            await (channel as any).edit({
-              parent: category.id,
-              position: chIndex,
-              topic: chDef.topic ?? '',
-              rateLimitPerUser: chDef.rateLimitPerUser ?? 0,
-              reason: 'Aducti Labs Server Declarative Sync',
-            });
+            await (channel as any).edit(updateOptions);
           }
 
           if (channelOverwrites) {
