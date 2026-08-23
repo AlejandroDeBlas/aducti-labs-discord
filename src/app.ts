@@ -11,8 +11,7 @@ export async function bootstrapApp() {
   try {
     await runMigrations();
   } catch (err) {
-    logger.error({ err }, 'Failed to run database migrations on startup');
-    process.exit(1);
+    logger.warn({ err }, 'No se pudieron aplicar las migraciones de base de datos en el arranque (PostgreSQL desconectado)');
   }
 
   // 2. Start HTTP Server
