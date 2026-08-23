@@ -1,13 +1,15 @@
 import { type Guild, type TextChannel } from 'discord.js';
 import { CHANNEL_NAMES } from '../config/constants.js';
 import { getWelcomeMessage } from '../content/welcome.js';
+import { getHowItWorksEmbed } from '../content/howItWorks.js';
+import { getRulesEmbed } from '../content/rules.js';
 import { getProLandingEmbed } from '../content/pro.js';
 import { SubscriptionService } from '../services/subscription.service.js';
 import { logger } from '../utils/logger.js';
 
 export class MessageManager {
   /**
-   * Posts or updates the welcome embed in #bienvenida
+   * Posts or updates the welcome, how-it-works, and rules embeds in #bienvenida
    */
   static async syncWelcomeMessage(guild: Guild) {
     const channel = guild.channels.cache.find(
@@ -19,7 +21,11 @@ export class MessageManager {
       return;
     }
 
-    const { embed, row } = getWelcomeMessage();
+    const { embed: welcomeEmbed, row } = getWelcomeMessage();
+    const howItWorksEmbed = getHowItWorksEmbed();
+    const rulesEmbed = getRulesEmbed();
+
+    const embeds = [welcomeEmbed, howItWorksEmbed, rulesEmbed];
 
     try {
       const messages = await channel.messages.fetch({ limit: 10 });
@@ -28,11 +34,11 @@ export class MessageManager {
       );
 
       if (existingBotMessage) {
-        await existingBotMessage.edit({ embeds: [embed], components: [row] });
-        logger.info('Updated existing welcome message in #bienvenida');
+        await existingBotMessage.edit({ embeds, components: [row] });
+        logger.info('Updated existing welcome, how-it-works and rules message in #bienvenida');
       } else {
-        await channel.send({ embeds: [embed], components: [row] });
-        logger.info('Sent new welcome message in #bienvenida');
+        await channel.send({ embeds, components: [row] });
+        logger.info('Sent new welcome, how-it-works and rules message in #bienvenida');
       }
     } catch (err) {
       logger.error({ err }, 'Failed to sync welcome message in #bienvenida');
@@ -40,7 +46,7 @@ export class MessageManager {
   }
 
   /**
-   * Posts or updates the pro promotional embed in #hazte-pro
+   * Posts or updates the pro promotional landing embed in #hazte-pro
    */
   static async syncProMessage(guild: Guild) {
     const channel = guild.channels.cache.find(
@@ -68,10 +74,10 @@ export class MessageManager {
 
       if (existingBotMessage) {
         await existingBotMessage.edit({ embeds: [embed], components: [row] });
-        logger.info('Updated existing pro message in #hazte-pro');
+        logger.info('Updated existing pro landing message in #hazte-pro');
       } else {
         await channel.send({ embeds: [embed], components: [row] });
-        logger.info('Sent new pro message in #hazte-pro');
+        logger.info('Sent new pro landing message in #hazte-pro');
       }
     } catch (err) {
       logger.error({ err }, 'Failed to sync pro message in #hazte-pro');
