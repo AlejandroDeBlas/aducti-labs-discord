@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify';
+import { SubscriptionService } from '../../services/subscription.service.js';
 
 export const checkoutRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/checkout/pro', async (_req, reply) => {
@@ -6,6 +7,10 @@ export const checkoutRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.get('/checkout/founder', async (_req, reply) => {
+    const founderStatus = await SubscriptionService.getFounderSlotsStatus();
+    if (!founderStatus.isAvailable) {
+      return reply.redirect('/auth/discord?plan=pro');
+    }
     return reply.redirect('/auth/discord?plan=founder');
   });
 

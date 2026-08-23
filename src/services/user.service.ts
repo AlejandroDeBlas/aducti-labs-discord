@@ -55,6 +55,37 @@ export class UserService {
     return created;
   }
 
+  static async saveOnboardingResponse(
+    userId: string,
+    data: {
+      primaryInterest?: string;
+      userProfile?: string;
+      completed?: boolean;
+    }
+  ): Promise<User | null> {
+    const updateData: Partial<User> = {
+      updatedAt: new Date(),
+    };
+
+    if (data.primaryInterest !== undefined) {
+      updateData.primaryInterest = data.primaryInterest;
+    }
+    if (data.userProfile !== undefined) {
+      updateData.userProfile = data.userProfile;
+    }
+    if (data.completed) {
+      updateData.onboardingCompletedAt = new Date();
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+
+    return updated ?? null;
+  }
+
   static async getUserByDiscordId(discordUserId: string) {
     const user = await db.query.users.findFirst({
       where: eq(users.discordUserId, discordUserId),

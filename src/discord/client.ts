@@ -45,6 +45,14 @@ export function getDiscordClient(): Client {
         if (interaction.isButton()) {
           if (interaction.customId === INTERACTION_IDS.ONBOARDING_JOIN) {
             await OnboardingHandler.handleJoinInteraction(interaction);
+          } else if (interaction.customId === 'onboarding_skip') {
+            await OnboardingHandler.handleSkip(interaction);
+          }
+        } else if (interaction.isStringSelectMenu()) {
+          if (interaction.customId === 'onboarding_interest_select') {
+            await OnboardingHandler.handleInterestSelection(interaction);
+          } else if (interaction.customId === 'onboarding_profile_select') {
+            await OnboardingHandler.handleProfileSelection(interaction);
           }
         } else if (interaction.isChatInputCommand()) {
           await handleSlashCommand(interaction, discordClient!);

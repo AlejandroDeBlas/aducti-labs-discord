@@ -3,13 +3,32 @@ import { env } from '../../config/env.js';
 import { generateOAuthState, verifyOAuthState } from '../../utils/security.js';
 import { UserService } from '../../services/user.service.js';
 import { StripeService } from '../../services/stripe.service.js';
+import { SubscriptionService } from '../../services/subscription.service.js';
+import { AnalyticsService } from '../../services/analytics.service.js';
 import { logger } from '../../utils/logger.js';
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // 1. Initiate Discord OAuth2 Flow
   fastify.get('/auth/discord', async (req, reply) => {
     const { plan = 'pro' } = req.query as { plan?: string };
-    const validPlan = plan === 'founder' ? 'founder' : 'pro';
+    let validPlan: 'pro' | 'founder' = plan === 'founder' ? 'founder' : 'pro';
+
+    // Verify Founder availability
+    if (validPlan === 'founder') {
+      const founderStatus = await SubscriptionService.getFounderSlotsStatus();
+      if (!founderStatus.isAvailable) {
+        logger.info('Founder slots filled, falling back to Pro plan');
+        validPlan = 'pro';
+      }
+    }
+
+    // Track CTA click
+    await AnalyticsService.trackEvent(
+      validPlan === 'founder' ? 'founder_cta_clicked' : 'pro_cta_clicked',
+      {
+        properties: { requestedPlan: plan, resolvedPlan: validPlan },
+      }
+    );
 
     const state = generateOAuthState(validPlan);
 
@@ -35,9 +54,19 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       logger.warn({ error }, 'Discord OAuth authorization canceled or failed');
       return reply.type('text/html').send(`
         <html>
-          <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+          <head>
+            <meta charset="utf-8">
+            <title>Autorización Cancelada • Aducti Labs</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+              * { font-family: 'Inter', sans-serif; }
+            </style>
+          </head>
+          <body style="background: #0f172a; color: #f8fafc; text-align: center; padding: 50px;">
             <h2>Autorización Cancelada</h2>
-            <p>No se pudo completar la autenticación con Discord. Puedes cerrar esta ventana e intentarlo de nuevo desde Discord.</p>
+            <p style="color: #94a3b8;">No se pudo completar la autenticación con Discord. Puedes cerrar esta ventana e intentarlo de nuevo desde Discord.</p>
           </body>
         </html>
       `);
@@ -116,6 +145,16 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       if (!checkoutSession.url) {
         throw new Error('Stripe Checkout Session URL was not generated');
       }
+
+      // Track checkout started
+      await AnalyticsService.trackEvent('checkout_started', {
+        userId: user.id,
+        discordUserId: discordUser.id,
+        properties: {
+          plan: payload.plan,
+          sessionId: checkoutSession.id,
+        },
+      });
 
       return reply.redirect(checkoutSession.url);
     } catch (err: any) {

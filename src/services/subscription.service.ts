@@ -3,6 +3,7 @@ import { db } from '../db/index.js';
 import {
   subscriptions,
   webhookEvents,
+  discordRoleState,
   type Subscription,
   type WebhookEvent,
 } from '../db/schema.js';
@@ -18,6 +19,39 @@ export interface AccessEvaluation {
 }
 
 export class SubscriptionService {
+  /**
+   * Returns current active Founder slots and availability based on real DB records
+   */
+  static async getFounderSlotsStatus(): Promise<{
+    total: number;
+    active: number;
+    remaining: number;
+    isAvailable: boolean;
+  }> {
+    try {
+      const founderRoleStates = await db.query.discordRoleState.findMany({
+        where: eq(discordRoleState.founderRole, true),
+      });
+      const active = founderRoleStates.length;
+      const total = env.FOUNDER_MAX_MEMBERS;
+      const remaining = Math.max(0, total - active);
+      const isAvailable = Boolean(env.STRIPE_PRICE_FOUNDER_ID && remaining > 0);
+
+      return {
+        total,
+        active,
+        remaining,
+        isAvailable,
+      };
+    } catch {
+      return {
+        total: env.FOUNDER_MAX_MEMBERS,
+        active: 0,
+        remaining: env.FOUNDER_MAX_MEMBERS,
+        isAvailable: Boolean(env.STRIPE_PRICE_FOUNDER_ID),
+      };
+    }
+  }
   /**
    * Evaluates whether a Stripe subscription grants active PRO access according to official rules:
    * - 'active' or 'trialing' => PRO Access Granted

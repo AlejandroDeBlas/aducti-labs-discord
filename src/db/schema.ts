@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, boolean, jsonb, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -6,6 +6,9 @@ export const users = pgTable('users', {
   discordUserId: varchar('discord_user_id', { length: 32 }).unique().notNull(),
   discordUsername: varchar('discord_username', { length: 100 }).notNull(),
   discordGlobalName: varchar('discord_global_name', { length: 100 }),
+  primaryInterest: varchar('primary_interest', { length: 100 }),
+  userProfile: varchar('user_profile', { length: 100 }),
+  onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -57,6 +60,23 @@ export const discordRoleState = pgTable('discord_role_state', {
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const analyticsEvents = pgTable(
+  'analytics_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    discordUserId: varchar('discord_user_id', { length: 32 }),
+    eventName: varchar('event_name', { length: 100 }).notNull(),
+    properties: jsonb('properties').default({}).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_analytics_events_name').on(table.eventName),
+    index('idx_analytics_events_created_at').on(table.createdAt),
+    index('idx_analytics_events_discord_user').on(table.discordUserId),
+  ]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   stripeCustomer: one(stripeCustomers, {
@@ -68,6 +88,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [discordRoleState.userId],
   }),
+  analyticsEvents: many(analyticsEvents),
 }));
 
 export const stripeCustomersRelations = relations(stripeCustomers, ({ one }) => ({
@@ -91,6 +112,13 @@ export const discordRoleStateRelations = relations(discordRoleState, ({ one }) =
   }),
 }));
 
+export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [analyticsEvents.userId],
+    references: [users.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type StripeCustomer = typeof stripeCustomers.$inferSelect;
@@ -101,3 +129,5 @@ export type WebhookEvent = typeof webhookEvents.$inferSelect;
 export type NewWebhookEvent = typeof webhookEvents.$inferInsert;
 export type DiscordRoleState = typeof discordRoleState.$inferSelect;
 export type NewDiscordRoleState = typeof discordRoleState.$inferInsert;
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type NewAnalyticsEvent = typeof analyticsEvents.$inferInsert;

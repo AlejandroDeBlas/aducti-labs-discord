@@ -32,6 +32,10 @@ const envSchema = z.object({
   STRIPE_PRICE_PRO_ID: z.string().min(1, 'STRIPE_PRICE_PRO_ID is required'),
   STRIPE_PRICE_FOUNDER_ID: z.string().optional().default(''),
 
+  // Founder Plan Scarcity
+  FOUNDER_MAX_MEMBERS: z.coerce.number().default(25),
+  PUBLIC_FOUNDER_PRICE_LABEL: z.string().optional().default(''),
+
   // Security
   SESSION_SECRET: z
     .string()
@@ -70,5 +74,7 @@ export const env = {
   get STRIPE_WEBHOOK_SECRET() { return getEnv().STRIPE_WEBHOOK_SECRET; },
   get STRIPE_PRICE_PRO_ID() { return getEnv().STRIPE_PRICE_PRO_ID; },
   get STRIPE_PRICE_FOUNDER_ID() { return getEnv().STRIPE_PRICE_FOUNDER_ID; },
+  get FOUNDER_MAX_MEMBERS() { return getEnv().FOUNDER_MAX_MEMBERS; },
+  get PUBLIC_FOUNDER_PRICE_LABEL() { return getEnv().PUBLIC_FOUNDER_PRICE_LABEL; },
   get SESSION_SECRET() { return getEnv().SESSION_SECRET; },
 };

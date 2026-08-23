@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { StripeService } from '../../services/stripe.service.js';
 import { SubscriptionService } from '../../services/subscription.service.js';
 import { UserService } from '../../services/user.service.js';
+import { AnalyticsService } from '../../services/analytics.service.js';
 import { getDiscordClient, syncMemberDiscordRoles } from '../../discord/client.js';
 import { DiscordLogger } from '../../discord/logger.js';
 import { env } from '../../config/env.js';
@@ -87,6 +88,19 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
                     founderRole: isFounder || undefined,
                   });
 
+                  // Track funnel events
+                  await AnalyticsService.trackEvent('checkout_completed', {
+                    userId: user.id,
+                    discordUserId,
+                    properties: { plan, subscriptionId },
+                  });
+
+                  await AnalyticsService.trackEvent('subscription_activated', {
+                    userId: user.id,
+                    discordUserId,
+                    properties: { plan, subscriptionId, isFounder },
+                  });
+
                   if (guild) {
                     await DiscordLogger.logProActivated(
                       guild,
@@ -124,6 +138,14 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
               await SubscriptionService.syncStripeSubscription(user.id, stripeSub);
               const targetRoles = await SubscriptionService.computeUserTargetRoles(user.id);
 
+              if (stripeSub.cancel_at_period_end) {
+                await AnalyticsService.trackEvent('subscription_cancelled', {
+                  userId: user.id,
+                  discordUserId: user.discordUserId,
+                  properties: { subscriptionId: stripeSub.id },
+                });
+              }
+
               await syncMemberDiscordRoles({
                 discordUserId: user.discordUserId,
                 addMember: targetRoles.shouldHaveMember,
@@ -155,6 +177,12 @@ export const webhookRoutes: FastifyPluginAsync = async (fastify) => {
             if (user) {
               await SubscriptionService.syncStripeSubscription(user.id, stripeSub);
               const targetRoles = await SubscriptionService.computeUserTargetRoles(user.id);
+
+              await AnalyticsService.trackEvent('subscription_ended', {
+                userId: user.id,
+                discordUserId: user.discordUserId,
+                properties: { subscriptionId: stripeSub.id },
+              });
 
               // Remove Pro role, but KEEP Founder role if existing
               await syncMemberDiscordRoles({

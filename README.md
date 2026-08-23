@@ -1,6 +1,17 @@
 # Aducti Labs • Discord & Stripe Management System
 
-Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord de **Aducti Labs**, su onboarding interactivo, jerarquía de roles, canales, permisos, pasarela de suscripción recurrente con Stripe y reconciliación continua.
+Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord de **Aducti Labs**, su onboarding interactivo con segmentación, jerarquía de roles, canales, permisos, pasarela de suscripción recurrente con Stripe y reconciliación continua.
+
+---
+
+## 🧭 Posicionamiento y Propuesta de Valor
+
+> **"La IA cambia demasiado rápido para aprenderla viendo vídeos sueltos. Aducti Labs es una comunidad para aprender qué herramientas, modelos y técnicas realmente importan y cómo aplicarlas en proyectos reales para construir, automatizar, crear y vender mejor."**
+
+### Los 3 Beneficios Centrales:
+1. **🎯 Aprende lo que importa:** Filtrado continuo de herramientas, modelos y novedades técnicas (separamos señal de ruido).
+2. **🛠️ Construye cosas reales:** Workshops semanales en directo, repositorios completos, arquitecturas, workflows y proyectos reales de principio a fin.
+3. **🤝 Obtén ayuda cuando te atasques:** Feedback directo, resolución prioritaria de dudas complejas en `#dudas-pro` y coworking en `🔊 sala-pro`.
 
 ---
 
@@ -18,10 +29,11 @@ Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord
 │                                                                 │
 │  ┌─────────────────────────┐       ┌─────────────────────────┐  │
 │  │   Discord Bot Engine    │       │     HTTP API (Fastify)  │  │
-│  │  - Onboarding Handler   │       │  - Discord OAuth2       │  │
+│  │  - Onboarding & Segm.   │       │  - Discord OAuth2       │  │
 │  │  - Slash Commands       │       │  - Stripe Checkout      │  │
 │  │  - Server Sync & Setup  │       │  - Stripe Webhooks      │  │
-│  │  - Discord #logs Embeds │       │  - Healthcheck          │  │
+│  │  - /metrics Reporting   │       │  - Healthcheck          │  │
+│  │  - Discord #logs Embeds │       │  - Funnel Analytics     │  │
 │  └────────────┬────────────┘       └────────────┬────────────┘  │
 │               │                                 │               │
 │               └────────────────┬────────────────┘               │
@@ -45,7 +57,7 @@ Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord
 1. `👑 Owner`: Administrador absoluto.
 2. `🤖 Bot`: Gestiona roles inferiores, canales, mensajes y webhooks.
 3. `🛡️ Moderador`: Gestión de mensajes, hilos, timeouts y auditoría. Sin permisos destructivos.
-4. `🏆 Labs Founder`: Rol histórico honorario (permanece de por vida).
+4. `🏆 Labs Founder`: Rol histórico honorario (permanece de por vida, limitado a las primeras 25 plazas).
 5. `⭐ Labs Pro`: Rol funcional de acceso premium (vinculado a suscripción activa).
 6. `👤 Labs Member`: Rol gratuito asignado automáticamente en el onboarding.
 7. `@everyone`: Rol base con acceso restringido únicamente a canales de bienvenida y venta.
@@ -55,9 +67,9 @@ Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord
 ## 📁 Categorías y Canales Declarativos
 
 - **📌 EMPIEZA AQUÍ**
-  - `#bienvenida`: Embed institucional con botón interactivo `Entrar en Aducti Labs`.
+  - `#bienvenida`: Embed institucional con botón interactivo `🚀 Entrar en Aducti Labs`.
   - `#anuncios`: Novedades oficiales de Aducti Labs (solo lectura con reacciones).
-  - `#hazte-pro`: Explicación de Labs Pro con botón directo a Stripe Checkout (oculto para usuarios PRO).
+  - `#hazte-pro`: Landing de conversión Pro con escasez real Founder (oculto para usuarios PRO).
 - **💬 COMUNIDAD** *(Desbloqueado para Labs Member, Labs Pro, Founder)*
   - `#general`: Chat general de la comunidad (slowmode 5s).
   - `#preguntas`: Dudas técnicas y resolución colectiva de problemas.
@@ -69,7 +81,7 @@ Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord
 - **🎁 RECURSOS**
   - `#recursos-gratis`: Repositorios, prompts y herramientas seleccionadas.
 - **⭐ LABS PRO** *(Exclusivo para Labs Pro)*
-  - `#clases`: Grabaciones, directos y material de workshops técnicos semanales.
+  - `#clases`: Grabaciones, directos y material de workshops técnicos semanales y proyectos completos.
   - `#recursos-pro`: Workflows avanzados, repositorios privados y plantillas de producción.
   - `#dudas-pro`: Consultoría técnica directa y resolución prioritaria.
   - `#proyectos-pro`: Code reviews y colaboración en proyectos avanzados.
@@ -79,33 +91,63 @@ Sistema integral, declarativo y autónomo para gestionar la comunidad de Discord
 
 ---
 
-## ⚡ Flujos de Usuario
+## 📝 Guía Editorial: Titulación por Resultados
 
-### 1. Onboarding Gratuito
-1. Usuario nuevo entra al servidor con `@everyone`.
-2. Solo puede ver `#bienvenida`, `#anuncios` y `#hazte-pro`.
-3. Hace clic en el botón `Entrar en Aducti Labs` en `#bienvenida`.
-4. El bot asigna de forma idempotente el rol `👤 Labs Member`.
-5. Se desbloquean inmediatamente `💬 COMUNIDAD`, `🤖 IA` y `🎁 RECURSOS`.
-6. Se registra el evento en `#logs`.
+Todos los workshops, proyectos y recursos deben titularse orientados a **resultados y construcción real**, nunca temas teóricos abstractos:
 
-### 2. Alta PRO y Founder con Stripe
-1. Usuario hace clic en `Hazte Pro` en `#hazte-pro` o visita `/checkout/pro` (o `/checkout/founder`).
-2. Se inicia el flujo OAuth2 de Discord con verificación CSRF `state`.
-3. El backend obtiene el `discord_user_id` verificado y crea una sesión de Stripe Checkout.
-4. Tras el pago, Stripe emite el webhook `checkout.session.completed` y `customer.subscription.created`.
-5. El backend valida la firma criptográfica `Stripe-Signature`, registra la idempotencia en `webhook_events`, guarda la suscripción en PostgreSQL y asigna `⭐ Labs Pro` (y `🏆 Labs Founder` si aplica).
-6. Se publica un embed conmemorativo en `#logs`.
-
-### 3. Cancelación de Suscripción
-1. Si el usuario cancela su suscripción (`cancel_at_period_end = true`), **mantiene su acceso PRO** hasta que venza la fecha final pagada (`current_period_end`).
-2. Cuando el periodo expira (`customer.subscription.deleted`), se retira `⭐ Labs Pro`.
-3. Si el usuario tenía rol `🏆 Labs Founder`, **se conserva intacto para siempre**.
-4. Se registra la baja en `#logs`.
+| ❌ Título Inadecuado | ✅ Título Correcto Orientado a Resultado |
+| :--- | :--- |
+| *Introducción a MCP* | **Construye un agente que opere sobre tu repositorio con MCP** |
+| *Automatización con APIs* | **Construye un sistema que capture y clasifique leads automáticamente** |
+| *IA Generativa aplicada* | **Crea un pipeline que convierta un guion en un vídeo listo para publicar** |
+| *RAG con LangChain* | **Monta un asistente que responda sobre la documentación interna de tu SaaS** |
 
 ---
 
-## 🛠️ Scripts de Operación y Mantenimiento
+## ⚡ Flujos de Usuario y Embudo de Conversión
+
+### 1. Onboarding Gratuito con Segmentación Ligera
+1. Usuario nuevo entra al servidor con `@everyone`.
+2. Solo puede ver `#bienvenida`, `#anuncios` y `#hazte-pro`.
+3. Hace clic en el botón `🚀 Entrar en Aducti Labs` en `#bienvenida`.
+4. El bot asigna de forma inmediata e idempotente el rol `👤 Labs Member` (sin bloqueo).
+5. Se presenta un menú desplegable de 2 preguntas rápidas (opcional):
+   - **Interés principal:** Coding con IA, Automatización, IA Generativa, Marketing con IA, Modelos / IA local, SaaS.
+   - **Perfil / Situación:** Principiante, Programador, Freelance/Agencia, Founder, Empresa, Creador.
+6. Las respuestas se persisten en PostgreSQL y se registra el evento `onboarding_completed`.
+
+### 2. Alta PRO y Founder con Stripe
+1. Usuario hace clic en `Hazte Pro` o `Plaza Founder` en `#hazte-pro` (o visita `/checkout/pro` / `/checkout/founder`).
+2. Se registra el evento `pro_cta_clicked` o `founder_cta_clicked`.
+3. Si solicita Founder, el sistema valida que queden plazas disponibles (`< FOUNDER_MAX_MEMBERS`). Si se han agotado las 25 plazas, se redirige a Pro normal.
+4. Tras la autenticación OAuth2 de Discord, se genera la sesión de Stripe Checkout y se registra `checkout_started`.
+5. Tras el pago confirmado por webhook:
+   - Se registra `checkout_completed` y `subscription_activated`.
+   - Se asigna `⭐ Labs Pro` (y `🏆 Labs Founder` si aplica).
+   - Se publica embed conmemorativo en `#logs`.
+
+### 3. Cancelación de Suscripción y Garantía de 7 Días
+1. Si el usuario cancela en Stripe (`cancel_at_period_end = true`), mantiene acceso Pro hasta que finalice la fecha pagada (`current_period_end`).
+2. Cuando el periodo expira, se retira `⭐ Labs Pro` y se registra `subscription_ended`.
+3. **Preservación Histórica:** Si el usuario obtuvo el rol `🏆 Labs Founder`, **se conserva intacto de por vida**.
+
+#### 🛡️ Gestión Manual de Reembolsos en Stripe:
+Si un usuario solicita reembolso dentro de la garantía de 7 días:
+1. Entra a [Stripe Dashboard → Pagos](https://dashboard.stripe.com/payments).
+2. Busca el cliente o la transacción correspondiente.
+3. Haz clic en **Reembolsar** (Refund).
+4. Cancela la suscripción en la pestaña de Suscripciones. El webhook procesará la baja y actualizará los roles en Discord de forma automática.
+
+---
+
+## 🔮 Futuro Seam: Canal `#wins`
+
+Cuando la comunidad alcance un volumen crítico de actividad y miembros activos, se podrá añadir el canal:
+- `#wins` dentro de `💬 COMUNIDAD` para compartir lanzamientos de productos, primeros clientes conseguidos, automatizaciones desplegadas en producción y resultados reales de los miembros.
+
+---
+
+## 🛠️ Scripts de Operación y Comandos Slash
 
 ```bash
 # Inicialización completa (migraciones DB, roles, categorías, canales, permisos, embeds y slash commands)
@@ -117,86 +159,12 @@ npm run sync-discord
 # Reconciliación y auditoría de suscripciones DB vs Stripe vs Roles Discord
 npm run reconcile
 
-# Desarrollo local con recarga en caliente
-npm run dev
-
-# Compilación TypeScript
-npm run build
-
-# Ejecución en producción
-npm run start
-
 # Pruebas unitarias con Vitest
 npm test
 ```
 
----
-
-## 🔒 Variables de Entorno
-
-Configura estas variables en tu archivo `.env` o en las variables de entorno de Coolify:
-
-| Variable | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `NODE_ENV` | Entorno de ejecución | `production` |
-| `PORT` | Puerto HTTP del servidor | `3000` |
-| `HOST` | Host de escucha interna | `0.0.0.0` |
-| `APP_URL` | URL pública con HTTPS | `https://community.aducti.com` |
-| `DATABASE_URL` | Conexión a PostgreSQL | `postgres://user:pass@host:5432/db` |
-| `DISCORD_BOT_TOKEN` | Token del Bot de Discord | `MTA...` |
-| `DISCORD_CLIENT_ID` | Application ID de Discord | `123456789012345678` |
-| `DISCORD_CLIENT_SECRET` | Client Secret OAuth2 de Discord | `abc...` |
-| `DISCORD_GUILD_ID` | ID del servidor de Discord | `987654321098765432` |
-| `DISCORD_REDIRECT_URI` | Callback OAuth2 de Discord | `https://community.aducti.com/auth/discord/callback` |
-| `STRIPE_SECRET_KEY` | Clave secreta de Stripe API | `sk_live_...` (o `sk_test_...`) |
-| `STRIPE_WEBHOOK_SECRET` | Secreto del Webhook de Stripe | `whsec_...` |
-| `STRIPE_PRICE_PRO_ID` | Price ID recurrente para Labs Pro | `price_123...` |
-| `STRIPE_PRICE_FOUNDER_ID` | Price ID opcional para Labs Founder | `price_456...` |
-| `SESSION_SECRET` | Clave criptográfica aleatoria (32+ chars) | `hex_random_string` |
-
----
-
-## 🚀 Despliegue en Coolify
-
-### 1. Crear Proyecto en Coolify
-1. En Coolify, crea un nuevo proyecto: **`Aducti Labs`**.
-2. Añade un entorno **`production`**.
-
-### 2. Añadir Base de Datos PostgreSQL
-1. En el proyecto, añade un nuevo recurso: **PostgreSQL**.
-2. Nombre: `aducti-labs-postgres`.
-3. Configura base de datos (`aducti_labs_discord`), usuario y contraseña segura.
-4. Deja activada la persistencia del volumen Docker.
-5. Configura backups automáticos diarios (Daily backup retention: 7 días).
-
-### 3. Añadir Aplicación Node.js
-1. Añade un recurso de tipo **Private GitHub Repository**.
-2. Selecciona `AlejandroDeBlas/aducti-labs-discord` (rama `main`).
-3. Tipo de construcción: **Dockerfile**.
-4. Asigna las variables de entorno listadas arriba.
-5. Configura el dominio público (ej. `community.aducti.com` o `labs.aducti.com`).
-6. Configura Healthcheck:
-   - Path: `/health`
-   - Interval: `30`
-   - Timeout: `5`
-7. Despliega la aplicación. Las migraciones de base de datos se aplicarán automáticamente al arrancar.
-
-### 4. Configurar Webhook en Stripe
-1. Ve a [Stripe Dashboard → Developers → Webhooks](https://dashboard.stripe.com/webhooks).
-2. Añade un endpoint apuntando a `https://<tu-dominio>/webhooks/stripe`.
-3. Selecciona los siguientes eventos:
-   - `checkout.session.completed`
-   - `customer.subscription.created`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-   - `invoice.payment_failed`
-   - `invoice.paid`
-4. Copia el Signing Secret (`whsec_...`) y colócalo en `STRIPE_WEBHOOK_SECRET` en Coolify.
-
----
-
-## 🧪 Comandos Slash de Discord
-
-- `/status`: Muestra estado de la conexión a Discord Gateway, PostgreSQL, Stripe API, miembros del servidor y suscriptores PRO activos (Requiere rol Moderador o superior).
-- `/pro`: Presenta los beneficios de Labs Pro con enlace directo a la pasarela de pago.
-- `/sync`: Ejecuta sincronización declarativa y reconciliación de roles en vivo (Exclusivo para el Owner).
+### Comandos Slash:
+- `/metrics` *(Solo Owner)*: Informe completo de métricas del embudo, activación, altas Pro, slots Founder y distribución de perfiles de la comunidad.
+- `/status` *(Moderadores y Owner)*: Estado operativo de Discord Gateway, PostgreSQL, Stripe API y recuento de suscriptores.
+- `/pro`: Presenta los 3 beneficios centrales con enlace directo al checkout.
+- `/sync` *(Solo Owner)*: Sincronización forzada de estructura y reconciliación en vivo.

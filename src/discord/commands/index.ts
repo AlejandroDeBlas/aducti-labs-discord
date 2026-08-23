@@ -15,6 +15,8 @@ import { subscriptions } from '../../db/schema.js';
 import { getStripeClient } from '../../services/stripe.service.js';
 import { DiscordSyncEngine } from '../sync.js';
 import { ReconcileService } from '../../services/reconcile.service.js';
+import { AnalyticsService } from '../../services/analytics.service.js';
+import { SubscriptionService } from '../../services/subscription.service.js';
 import { EMBED_COLORS, ROLE_NAMES } from '../../config/constants.js';
 import { env } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
@@ -29,6 +31,11 @@ export const slashCommands = [
   new SlashCommandBuilder()
     .setName('pro')
     .setDescription('Información sobre las ventajas y acceso a Aducti Labs Pro.'),
+
+  new SlashCommandBuilder()
+    .setName('metrics')
+    .setDescription('Muestra métricas del embudo, activación, suscripciones y segmentación (Solo Owner).')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   new SlashCommandBuilder()
     .setName('sync')
@@ -132,24 +139,113 @@ export async function handleSlashCommand(
 
     await interaction.editReply({ embeds: [embed] });
   } else if (commandName === 'pro') {
+    const founderStatus = await SubscriptionService.getFounderSlotsStatus();
+
     const embed = new EmbedBuilder()
       .setColor(EMBED_COLORS.PRO)
       .setTitle('⭐ Aducti Labs Pro')
       .setDescription(
-        'Accede a workshops técnicos semanales, soporte técnico de alto nivel, código fuente de producción y salas privadas de coworking y directos.'
+        '**Aprende lo que importa, construye cosas reales y obtén ayuda cuando te atasques.**\n\n' +
+        'Accede a workshops prácticos semanales, proyectos completos construidos de principio a fin, código de producción y soporte directo.'
       )
-      .setFooter({ text: 'Aducti Labs Pro' });
+      .setFooter({ text: 'Aducti Labs Pro • Cancela cuando quieras' });
 
-    const checkoutUrl = `${env.APP_URL}/auth/discord?plan=pro`;
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const buttons: ButtonBuilder[] = [
       new ButtonBuilder()
         .setLabel('Obtener Labs Pro')
         .setStyle(ButtonStyle.Link)
-        .setURL(checkoutUrl)
-        .setEmoji('⭐')
-    );
+        .setURL(`${env.APP_URL}/auth/discord?plan=pro`)
+        .setEmoji('⭐'),
+    ];
+
+    if (founderStatus.isAvailable) {
+      buttons.push(
+        new ButtonBuilder()
+          .setLabel(`Plaza Founder (${founderStatus.remaining} restantes)`)
+          .setStyle(ButtonStyle.Link)
+          .setURL(`${env.APP_URL}/auth/discord?plan=founder`)
+          .setEmoji('🏆')
+      );
+    }
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
 
     await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+  } else if (commandName === 'metrics') {
+    if (!interaction.guild) return;
+
+    // Check if user is owner or has owner role
+    const member = interaction.member;
+    const isOwner =
+      interaction.guild.ownerId === interaction.user.id ||
+      (member as any)?.roles?.cache?.some((r: any) => r.name === ROLE_NAMES.OWNER);
+
+    if (!isOwner) {
+      await interaction.reply({
+        content: '⛔ Este comando solo puede ser ejecutado por el propietario del servidor.',
+        ephemeral: true,
+      });
+      return;
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      const metrics = await AnalyticsService.getFunnelMetrics();
+
+      const interestsText =
+        metrics.topInterests.length > 0
+          ? metrics.topInterests.map((i) => `• \`${i.interest}\`: ${i.count}`).join('\n')
+          : 'Sin datos aún';
+
+      const profilesText =
+        metrics.topProfiles.length > 0
+          ? metrics.topProfiles.map((p) => `• \`${p.profile}\`: ${p.count}`).join('\n')
+          : 'Sin datos aún';
+
+      const embed = new EmbedBuilder()
+        .setColor(EMBED_COLORS.PRIMARY)
+        .setTitle('📈 Métricas del Funnel y Comunidad • Aducti Labs')
+        .addFields(
+          {
+            name: '👥 Comunidad y Activación',
+            value:
+              `• **Miembros en DB:** ${metrics.totalMembers}\n` +
+              `• **Miembros activados:** ${metrics.activatedMembers}\n` +
+              `• **Nuevos (últimos 7d):** +${metrics.newMembers7d}`,
+            inline: true,
+          },
+          {
+            name: '💳 Suscripciones y Conversión',
+            value:
+              `• **Pro Activos:** ${metrics.activePro}\n` +
+              `• **Founders Activos:** ${metrics.activeFounders} (${metrics.founderSlotsRemaining} plazas libres)\n` +
+              `• **Nuevas altas (7d):** +${metrics.newPro7d}\n` +
+              `• **Checkouts (7d):** ${metrics.checkoutsStarted7d}\n` +
+              `• **Bajas (30d):** ${metrics.cancellations30d}`,
+            inline: true,
+          },
+          {
+            name: '🎯 Intereses Más Populares',
+            value: interestsText,
+            inline: false,
+          },
+          {
+            name: '💼 Perfil de los Miembros',
+            value: profilesText,
+            inline: false,
+          }
+        )
+        .setFooter({ text: 'Aducti Labs • Métricas de Negocio' })
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+    } catch (err: any) {
+      logger.error({ err }, 'Error calculating /metrics');
+      await interaction.editReply({
+        content: `❌ Error al calcular métricas: ${err?.message || 'Error desconocido'}`,
+      });
+    }
   } else if (commandName === 'sync') {
     if (!interaction.guild) return;
 
@@ -174,7 +270,7 @@ export async function handleSlashCommand(
       const reconResult = await ReconcileService.reconcileGuildMembers(interaction.guild);
 
       await interaction.editReply({
-        content: `✅ **Sincronización completada.**\n- Servidor actualizado según configuración declarativa.\n- Reconciliación: ${reconResult.checked} usuarios auditados (+${reconResult.rolesAdded} roles añadidos, -${reconResult.rolesRemoved} retirados).`,
+        content: `✅ **Sincronización completada.**\n- Servidor y mensajes actualizados según configuración declarativa.\n- Reconciliación: ${reconResult.checked} usuarios auditados (+${reconResult.rolesAdded} roles añadidos, -${reconResult.rolesRemoved} retirados).`,
       });
     } catch (err: any) {
       logger.error({ err }, 'Error during /sync slash command');
