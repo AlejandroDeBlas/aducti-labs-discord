@@ -45,16 +45,16 @@ describe('Discord Declarative Configuration', () => {
     ]);
   });
 
-  it('should contain exactly 15 text channels and 1 voice channel', () => {
+  it('should contain exactly 17 text channels and 1 voice channel', () => {
     const categories = DECLARATIVE_SERVER_CONFIG.categories;
     const allChannels = categories.flatMap((c) => c.channels);
 
-    expect(allChannels).toHaveLength(16);
+    expect(allChannels).toHaveLength(18);
 
     const textChannels = allChannels.filter((c) => c.type === ChannelType.GuildText);
     const voiceChannels = allChannels.filter((c) => c.type === ChannelType.GuildVoice);
 
-    expect(textChannels).toHaveLength(15);
+    expect(textChannels).toHaveLength(17);
     expect(voiceChannels).toHaveLength(1);
     expect(voiceChannels[0].name).toBe(CHANNEL_NAMES.SALA_PRO);
   });

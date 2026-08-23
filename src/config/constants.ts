@@ -19,6 +19,8 @@ export const CATEGORY_NAMES = {
 export const CHANNEL_NAMES = {
   // 📌 EMPIEZA AQUÍ
   BIENVENIDA: 'bienvenida',
+  NORMAS: 'normas',
+  COMO_FUNCIONA: 'como-funciona',
   ANUNCIOS: 'anuncios',
   HAZTE_PRO: 'hazte-pro',
 

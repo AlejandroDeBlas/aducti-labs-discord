@@ -138,12 +138,44 @@ export const DECLARATIVE_SERVER_CONFIG: DeclarativeServerConfig = {
         {
           name: CHANNEL_NAMES.BIENVENIDA,
           type: ChannelType.GuildText,
-          topic: 'Bienvenido a Aducti Labs. Lee las normas y pulsa el botón para unirte a la comunidad.',
+          topic: 'Bienvenido a Aducti Labs. Pulsa el botón para unirte a la comunidad.',
           permissionOverrides: (roles, everyoneId) => [
             {
               id: everyoneId,
               allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
               deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions],
+            },
+            {
+              id: roles[ROLE_NAMES.MODERATOR],
+              allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages],
+            },
+          ],
+        },
+        {
+          name: CHANNEL_NAMES.NORMAS,
+          type: ChannelType.GuildText,
+          topic: 'Normas y reglas de convivencia de la comunidad Aducti Labs.',
+          permissionOverrides: (roles, everyoneId) => [
+            {
+              id: everyoneId,
+              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions],
+              deny: [PermissionFlagsBits.SendMessages],
+            },
+            {
+              id: roles[ROLE_NAMES.MODERATOR],
+              allow: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageMessages],
+            },
+          ],
+        },
+        {
+          name: CHANNEL_NAMES.COMO_FUNCIONA,
+          type: ChannelType.GuildText,
+          topic: 'Cómo funciona Aducti Labs: diferencias entre comunidad Free y Labs Pro.',
+          permissionOverrides: (roles, everyoneId) => [
+            {
+              id: everyoneId,
+              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AddReactions],
+              deny: [PermissionFlagsBits.SendMessages],
             },
             {
               id: roles[ROLE_NAMES.MODERATOR],

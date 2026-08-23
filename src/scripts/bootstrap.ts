@@ -37,9 +37,8 @@ async function bootstrap() {
     logger.info(syncResult, 'Estructura del servidor sincronizada.');
 
     // 4. Initial Messages
-    logger.info('Paso 4: Publicando/Actualizando mensajes interactivos (#bienvenida y #hazte-pro)...');
-    await MessageManager.syncWelcomeMessage(guild);
-    await MessageManager.syncProMessage(guild);
+    logger.info('Paso 4: Publicando/Actualizando mensajes interactivos (#bienvenida, #normas, #como-funciona, #hazte-pro)...');
+    await MessageManager.syncAllMessages(guild);
 
     // 5. Slash Commands
     logger.info('Paso 5: Registrando comandos slash (/status, /pro, /sync)...');

@@ -20,8 +20,7 @@ async function sync() {
     }
 
     const syncResult = await DiscordSyncEngine.syncServer(guild);
-    await MessageManager.syncWelcomeMessage(guild);
-    await MessageManager.syncProMessage(guild);
+    await MessageManager.syncAllMessages(guild);
 
     logger.info(syncResult, '=== SINCRONIZACIÓN DE DISCORD COMPLETADA ===');
     client.destroy();
