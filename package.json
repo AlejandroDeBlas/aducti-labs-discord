@@ -1,0 +1,57 @@
+{
+  "name": "aducti-labs-discord",
+  "version": "1.0.0",
+  "description": "Sistema de gestión integral para la comunidad Discord de Aducti Labs con Stripe y PostgreSQL",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "bootstrap": "tsx src/scripts/bootstrap.ts",
+    "sync-discord": "tsx src/scripts/sync-discord.ts",
+    "reconcile": "tsx src/scripts/reconcile.ts"
+  },
+  "keywords": [
+    "discord",
+    "stripe",
+    "bot",
+    "aducti-labs",
+    "drizzle",
+    "fastify"
+  ],
+  "author": "Aducti Labs",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^10.0.2",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.4",
+    "fastify": "^5.2.1",
+    "fastify-raw-body": "^6.0.1",
+    "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "stripe": "^17.6.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "@types/pg": "^8.11.11",
+    "drizzle-kit": "^0.30.4",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

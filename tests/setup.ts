@@ -1,0 +1,15 @@
+process.env.NODE_ENV = 'test';
+process.env.PORT = '3000';
+process.env.HOST = '0.0.0.0';
+process.env.APP_URL = 'http://localhost:3000';
+process.env.DATABASE_URL = 'postgres://postgres:postgres_password@localhost:5432/aducti_labs_discord_test';
+process.env.DISCORD_BOT_TOKEN = 'test_discord_bot_token_mock';
+process.env.DISCORD_CLIENT_ID = '123456789012345678';
+process.env.DISCORD_CLIENT_SECRET = 'test_discord_client_secret';
+process.env.DISCORD_GUILD_ID = '987654321098765432';
+process.env.DISCORD_REDIRECT_URI = 'http://localhost:3000/auth/discord/callback';
+process.env.STRIPE_SECRET_KEY = 'sk_test_mock_stripe_secret_key';
+process.env.STRIPE_WEBHOOK_SECRET = 'whsec_mock_stripe_webhook_secret';
+process.env.STRIPE_PRICE_PRO_ID = 'price_pro_test_123';
+process.env.STRIPE_PRICE_FOUNDER_ID = 'price_founder_test_123';
+process.env.SESSION_SECRET = 'a_very_secure_test_session_secret_32chars!';
